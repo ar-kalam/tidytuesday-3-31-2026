@@ -1,0 +1,119 @@
+---
+title: "Tidy Tuesday 3/31"
+author: "Akeeb Kalam"
+date: "2026-03-31"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+```{r}
+# Using R
+# Option 1: tidytuesdayR R package 
+## install.packages("tidytuesdayR")
+
+tuesdata <- tidytuesdayR::tt_load('2026-03-31')
+## OR
+tuesdata <- tidytuesdayR::tt_load(2026, week = 13)
+
+ocean_temperature <- tuesdata$ocean_temperature
+ocean_temperature_deployments <- tuesdata$ocean_temperature_deployments
+
+# Option 2: Read directly from GitHub
+
+ocean_temperature <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/main/data/2026/2026-03-31/ocean_temperature.csv')
+ocean_temperature_deployments <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/main/data/2026/2026-03-31/ocean_temperature_deployments.csv')
+```
+
+```{r}
+
+
+
+df1 <- ocean_temperature %>%
+  mutate(month = month(date, label = TRUE), year = year(date), day = day(date)) %>%
+  group_by(month) %>%
+  mutate(avg_temp = mean(mean_temperature_degree_c))
+
+df1
+
+plot1 <- ggplot(df1, aes(x = month, y = avg_temp, group = 1)) +
+  geom_line() +
+  geom_point() +
+  labs(x = "Month", y = "Average Temperature (C)")
+
+plot1
+
+
+
+```
+
+```{r}
+df2 <- ocean_temperature %>%
+  mutate(month = month(date, label = TRUE), year = year(date), day = day(date), avg_temp = mean(mean_temperature_degree_c)) %>%
+  group_by(year) %>% 
+  mutate(avg_temp = mean(mean_temperature_degree_c))
+df2
+
+plot2 <- ggplot(df2, aes(x = year, y = avg_temp)) +
+  geom_line() +
+  geom_point() +
+  labs(x = "Year", y = "Average Temperature (C)")
+
+plot2
+
+
+
+```
+
+```{r}
+
+df3 <- ocean_temperature %>%
+  mutate(
+    month = month(date, label = TRUE),
+    year = year(date)
+  ) %>%
+  group_by(year, month) %>%
+  mutate(avg_temp = mean(mean_temperature_degree_c))
+
+ggplot(df3, aes(x = month, y = avg_temp, group = year, color = factor(year))) +
+  geom_line() +
+  labs(
+    title = "Monthly Ocean Temperature by Year",
+    x = "Month",
+    y = "Average Temperature (C)",
+    color = "Year"
+  )
+
+```
+
+
+```{r}
+#How does temperature change with depth? Does the relationship change over time?
+
+df4 <- ocean_temperature %>%
+  mutate(
+    month = month(date, label = TRUE, abbr = TRUE)
+  ) %>%
+  group_by(month, sensor_depth_at_low_tide_m) %>%
+  summarise(avg_temp = mean(mean_temperature_degree_c, na.rm = TRUE), .groups = "drop")
+
+df4 <- df4 %>%
+  mutate(depth = factor(sensor_depth_at_low_tide_m, levels = c(2, 5, 10, 15, 20, 30, 40)))
+
+ggplot(df4, aes(x = month, y = depth, fill = avg_temp)) +
+  geom_tile() +
+  labs(
+    title = "Ocean Temperature by Depth and Month",
+    x = "Month",
+    y = "Depth",
+    fill = "Temp (C)"
+  ) +
+  scale_fill_gradient(low = "lightblue", high = "darkorange")
+
+```
+
